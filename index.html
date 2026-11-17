@@ -1,0 +1,149 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مقاعد الفصل</title><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="مقاعد"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef3f0;--sf:#fff;--tx:#17221c;--mu:#5d6b63;--bd:#cdd8d1;--g:#b83a64;--gb:#fbe6ee;--b:#2a63a8;--bb:#e2edfa;--ab:#fde3d9;--ac:#24473a;--ac2:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121a16;--sf:#1b2621;--tx:#e8f0eb;--mu:#9db0a5;--bd:#34443b;--g:#ee8fae;--gb:#3a2230;--b:#8db9ee;--bb:#1f2f45;--ab:#5a2c1d;--ac:#9bd1b6;--ac2:#10201a}}
+:root[data-theme="dark"]{--bg:#121a16;--sf:#1b2621;--tx:#e8f0eb;--mu:#9db0a5;--bd:#34443b;--g:#ee8fae;--gb:#3a2230;--b:#8db9ee;--bb:#1f2f45;--ab:#5a2c1d;--ac:#9bd1b6;--ac2:#10201a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.6 'Readex Pro','Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--tx)}
+main{max-width:860px;margin:auto;padding:12px}
+h2{margin:0 0 8px;font-size:20px}h3{margin:16px 0 6px;font-size:16px}
+#top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+select,input,textarea,button{font:inherit;color:var(--tx);background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:6px 10px}
+textarea{width:100%}button{cursor:pointer}
+:focus-visible{outline:2px solid var(--b);outline-offset:2px}
+nav{display:flex;gap:4px;overflow-x:auto;border-bottom:2px solid var(--bd);margin-bottom:12px}
+nav button{border:0;border-radius:8px 8px 0 0;background:none;white-space:nowrap}
+nav .on{background:var(--ac);color:var(--ac2)}
+.board{background:var(--ac);color:var(--ac2);text-align:center;border-radius:6px;padding:4px;margin-bottom:8px}
+.room{direction:ltr;display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}
+.col{flex:1;min-width:98px;display:flex;flex-direction:column;gap:6px}
+.col h4{margin:0;text-align:center;font-weight:600;font-size:13px;color:var(--mu)}
+.seat{direction:rtl;min-height:64px;border:2px solid var(--bd);border-radius:10px;padding:4px;display:flex;flex-direction:column;gap:2px;justify-content:center;background:var(--sf)}
+.seat.g{background:var(--gb);border-color:var(--g)}.seat.b{background:var(--bb);border-color:var(--b)}.seat.em{opacity:.45;border-style:dashed}
+.nm{text-align:center;font-size:13px;padding:1px 4px;border-radius:6px;cursor:pointer}
+.nm.sel{background:var(--ac);color:var(--ac2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{border-radius:16px;font-size:13px;padding:2px 10px}.chip.g{border-color:var(--g)}.chip.b{border-color:var(--b)}.chip.x{background:var(--ab);text-decoration:line-through}
+.warn{background:var(--ab);border-radius:8px;padding:6px 10px;margin:6px 0}
+.note{color:var(--mu);font-size:13px;margin:4px 0}
+.row{display:flex;align-items:center;gap:10px;margin:4px 0}.row span{min-width:110px}
+label{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse}td,th{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:right}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.chip.on{background:var(--ac);color:var(--ac2)}@media print{#top,nav,.noprint{display:none}}
+</style></head><body><main>
+<h2>مقاعد الفصل</h2><div id="top"></div><nav id="nav"></nav><div id="view"></div></main><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const DK=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const lines=t=>(t||'').split('\n').map(x=>x.trim()).filter(Boolean);
+const shuf=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pk=(a,b)=>a<b?a+'|'+b:b+'|'+a;
+function def(){const f=(n,gl)=>({name:n,gl,s:{g:6,m:6,b:7},girls:'',boys:'',sch:{},not:''});return{classes:{c1:f('الصف الأول',false),c2:f('الصف الثاني',true)},maps:{},abs:{}}}
+function load(){try{const t=localStorage.getItem('seatv1');if(t)return JSON.parse(t)}catch(e){}return def()}
+function save(){try{localStorage.setItem('seatv1',JSON.stringify(S))}catch(e){}}
+let S=load(),msg='';
+const today=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const cur={c:Object.keys(S.classes)[0],d:today,p:1,tab:'day',sel:null};
+const names=(c,f)=>[...new Set(lines(S.classes[c][f]))];
+const key=()=>cur.c+'|'+cur.d+'|'+cur.p;
+function periods(){const wd=new Date(cur.d+'T12:00').getDay(),s=(S.classes[cur.c].sch[wd]||'').split(/[,،\s]+/).map(Number).filter(x=>x>0);return s.length?s:[1,2,3,4,5,6,7]}
+function hist(c,d){const ks=Object.keys(S.maps).filter(k=>{const q=k.split('|');return q[0]===c&&q[1]<d});const ds=[...new Set(ks.map(k=>k.split('|')[1]))].sort().reverse().slice(0,5);const h={};ks.filter(k=>ds.includes(k.split('|')[1])).forEach(k=>S.maps[k].seats.forEach(s=>{for(let i=0;i<s.n.length;i++)for(let j=i+1;j<s.n.length;j++){const q=pk(s.n[i],s.n[j]);h[q]=(h[q]||0)+1}}));return h}
+function notSet(c){const o={};lines(S.classes[c].not).forEach(l=>{const p=l.split(/[،,\-–]/).map(x=>x.trim()).filter(Boolean);for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++)o[pk(p[i],p[j])]=1});return o}
+function split(L,s){const n=L.length,cnt=[];if(n<=2*s){for(let i=0;i<Math.ceil(n/2);i++)cnt.push(Math.min(2,n-2*i))}else{const t=Math.min(n-2*s,s);for(let i=0;i<s;i++)cnt.push(i<t?3:2)}return cnt}
+function arrange(L,cnt,h,nt){if(!L.length)return[];const a=shuf(L.slice());const gr=()=>{let i=0;return cnt.map(n=>a.slice(i,i+=n))};
+const cost=()=>{let s=0;gr().forEach(g=>{for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){const q=pk(g[i],g[j]);s+=(nt[q]?1000:0)+(h[q]||0)*10}});return s};
+let cu=cost();for(let t=0;t<700&&cu>0;t++){const i=Math.random()*a.length|0,j=Math.random()*a.length|0;if(i===j)continue;[a[i],a[j]]=[a[j],a[i]];const n=cost();if(n<=cu)cu=n;else[a[i],a[j]]=[a[j],a[i]]}
+return gr()}
+function gen(c,d,p){const C=S.classes[c],k=c+'|'+d+'|'+p,ab=S.abs[k]||[];
+const G=names(c,'girls').filter(n=>!ab.includes(n)),B=names(c,'boys').filter(n=>!ab.includes(n));
+const {g,m,b}=C.s,T=g+m+b,N=G.length+B.length;
+const ok=(x,y)=>x>=0&&y>=0&&G.length<=3*x&&B.length<=3*y&&x<=g+m&&y<=b+m&&Math.max(0,x-g)+Math.max(0,y-b)<=m;
+let sg=Math.ceil(G.length/2),sb=Math.ceil(B.length/2),warn='';
+if(!(sg+sb<=T&&ok(sg,sb))){let best=null,bc=1e9;for(let x=0;x<=T;x++){const y=T-x;if(!ok(x,y))continue;const tc=Math.max(0,G.length-2*x)+Math.max(0,B.length-2*y)+(G.length<=B.length?-x:x)*.001;if(tc<bc){bc=tc;best=[x,y]}}
+if(best){sg=best[0];sb=best[1]}else{warn='المقاعد لا تكفي. زيادة عدد المقاعد من الإعدادات.';sg=Math.min(sg,g+m);sb=Math.min(sb,b+m)}}
+const gS=[],bS=[];let mg=Math.max(0,sg-g),mb=Math.max(0,sb-b);if(mg+mb>m)mb=Math.max(0,m-mg);
+for(let i=0;i<Math.min(sg,g);i++)gS.push({s:'g',r:i});for(let i=0;i<mg&&i<m;i++)gS.push({s:'m',r:i,x:'g'});
+for(let i=0;i<Math.min(sb,b);i++)bS.push({s:'b',r:i});for(let i=0;i<mb;i++)bS.push({s:'m',r:m-1-i,x:'b'});
+const h=hist(c,d),nt=notSet2(c),out=[];let ex=0;
+const n3={};(C.no3||[]).forEach(n=>n3[n]=1);const cg=split(G,gS.length),cb=split(B,bS.length),Q=[...gS.slice(0,cg.length),...bS.slice(0,cb.length)],gA=shuf(G.slice()),bA=shuf(B.slice());
+const calc=()=>{const gp=[];let i=0;cg.forEach(n=>gp.push(gA.slice(i,i+=n)));i=0;cb.forEach(n=>gp.push(bA.slice(i,i+=n)));let s=0;const bad=[];
+gp.forEach(q0=>{if(q0.length>2)q0.forEach(u=>{if(n3[u]){s+=100;bad.push(u+' (مقعد ثلاثي)')}});for(let x=0;x<q0.length;x++)for(let y=x+1;y<q0.length;y++){const q=pk(q0[x],q0[y]);if(nt[q]){s+=1000;bad.push(q0[x]+' و'+q0[y]+' (نفس المقعد)')}s+=(h[q]||0)*10}});
+for(let x=0;x<Q.length;x++)for(let y=x+1;y<Q.length;y++)if(Q[x].s===Q[y].s&&Math.abs(Q[x].r-Q[y].r)===1)gp[x].forEach(u=>gp[y].forEach(v=>{if(nt[pk(u,v)]){s+=300;bad.push(u+' و'+v+' (متجاوران)')}}));
+return{s,bad,gp}};
+let cu=calc().s;for(let t=0;t<900&&cu>0;t++){const A=Math.random()*N<G.length?gA:bA;if(A.length<2)continue;const i=Math.random()*A.length|0,j=Math.random()*A.length|0;if(i===j)continue;[A[i],A[j]]=[A[j],A[i]];const n=calc().s;if(n<=cu)cu=n;else[A[i],A[j]]=[A[j],A[i]]}
+const fr=calc();fr.gp.forEach((n,i)=>out.push({...Q[i],n}));ex+=N-fr.gp.reduce((x,y)=>x+y.length,0);
+if(fr.bad.length)warn+=' لم يتحقق: '+fr.bad.slice(0,4).join('، ')+'.';
+if(ex>0)warn+=' '+ex+' بلا مقعد.';
+S.maps[k]={seats:out,warn:warn.trim(),sig:[...G,...B].sort().join('\n')}}
+function swap(k,a,b){let x,y;S.maps[k].seats.forEach(s=>s.n.forEach((n,i)=>{if(n===a)x=[s,i];if(n===b)y=[s,i]}));if(x&&y){x[0].n[x[1]]=b;y[0].n[y[1]]=a}}
+function merge(o){for(const c in o.classes||{}){const T=S.classes[c],U=o.classes[c];if(!T){S.classes[c]=U;continue}
+T.no3=[...new Set([...(T.no3||[]),...(U.no3||[])])];rulesOf(T);rulesOf(U).forEach(r=>{if(!T.rules.some(x=>x.t===r.t&&x.n.join('|')===r.n.join('|')))T.rules.push(r)});['girls','boys'].forEach(f=>{const h=new Set(lines(T[f]));const add=lines(U[f]).filter(n=>!h.has(n));if(add.length)T[f]=(T[f].trim()+'\n'+add.join('\n')).trim()});
+for(const d in U.sch||{})if(!T.sch[d])T.sch[d]=U.sch[d]}
+for(const k in o.maps||{})if(!S.maps[k])S.maps[k]=o.maps[k];
+for(const k in o.abs||{})S.abs[k]=[...new Set([...(S.abs[k]||[]),...o.abs[k]])]}
+function addNames(tg,arr){const C=S.classes[cur.c];const hd=/^(الاسم|الأسماء|اسم الطالب|اسم الطالبة|اسم|م|name|names)$/i;let a=arr.map(x=>String(x==null?'':x).trim()).filter(Boolean);if(a.length&&hd.test(a[0]))a.shift();a=a.filter(x=>!/^[0-9٠-٩\.\s]+$/.test(x));const have=new Set(lines(C[tg]));a=[...new Set(a)].filter(x=>!have.has(x));C[tg]=(C[tg].trim()+'\n'+a.join('\n')).trim();msg='أُضيف '+a.length+' اسماً';save();render()}
+function readBin(fl,tg){const rd=new FileReader();rd.onerror=()=>{msg='تعذرت قراءة الملف';render()};rd.onload=()=>{try{if(/\.docx$/i.test(fl.name)){if(!window.mammoth)throw 0;mammoth.extractRawText({arrayBuffer:rd.result}).then(r=>addNames(tg,r.value.split(/\r?\n/))).catch(()=>{msg='تعذرت قراءة ملف Word';render()})}else{if(!window.XLSX)throw 0;const wb=XLSX.read(rd.result,{type:'array'});const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});addNames(tg,rows.map(r=>r[0]))}}catch(e){msg='تعذرت قراءة الملف. تأكد من الاتصال بالإنترنت ومن أن الصيغة xlsx أو docx';render()}};rd.readAsArrayBuffer(fl)}
+function rulesOf(C){if(!C.rules)C.rules=lines(C.not).map(l=>({t:'g',n:l.split(/[،,]/).map(x=>x.trim()).filter(Boolean)})).filter(r=>r.n.length>1);return C.rules}
+function notSet2(c){const o={};rulesOf(S.classes[c]).forEach(r=>{const p=r.n;if(r.t==='s'){for(let j=1;j<p.length;j++)o[pk(p[0],p[j])]=1}else for(let i=0;i<p.length;i++)for(let j=i+1;j<p.length;j++)o[pk(p[i],p[j])]=1});return o}
+function n3V(C){const c=cur.c,gn=names(c,'girls'),all=[...gn,...names(c,'boys')],L=C.no3||(C.no3=[]);
+return `<h3>لا يجلس في مقعد ثلاثي</h3><p class='note'>اضغط على اسم لإضافته أو إزالته. يوضع هؤلاء في مقاعد يجلس عليها طالبان فقط إن أمكن.</p><div class='chips'>${all.map(n=>`<button class='chip ${gn.includes(n)?'g':'b'}${L.includes(n)?' on':''}' data-a='n3' data-n='${esc(n)}'>${esc(n)}</button>`).join('')}</div>${L.map(n=>`<div class='row'><span>${esc(n)}</span><button data-a='n3d' data-n='${esc(n)}'>حذف</button></div>`).join('')}`}
+function notV(C){const c=cur.c,gn=names(c,'girls'),all=[...gn,...names(c,'boys')],p=cur.pick||(cur.pick=[]),rs=rulesOf(C);
+return `<h3>لا يجلسون معاً</h3><p class='note'>اختر الأسماء بالضغط عليها، ثم اضغط نوع البند. المنع يشمل نفس المقعد والمقعد الذي أمامه أو خلفه مباشرة.</p><div class='chips'>${all.map(n=>`<button class='chip ${gn.includes(n)?'g':'b'}${p.includes(n)?' on':''}' data-a='pk' data-n='${esc(n)}'>${esc(n)}</button>`).join('')}</div><p class='note'>المختار: ${p.map(esc).join('، ')||'لا أحد'}</p><div class='acts'><button data-a='rg'>مجموعة: لا يجلس أي اثنين معاً</button><button data-a='rs'>الأول لا يجلس مع الباقين</button></div><p class='note'>في الخيار الثاني: الاسم الذي ضغطته أولاً هو الطالب الذي لا يجلس مع الآخرين، ويجوز لهم أن يجلسوا معاً.</p>${rs.map((r,i)=>`<div class='row'><span>${r.t==='s'?esc(r.n[0])+' لا يجلس مع: '+r.n.slice(1).map(esc).join('، '):'مجموعة: '+r.n.map(esc).join('، ')}</span><button data-a='rd' data-v='${i}'>حذف</button></div>`).join('')}`}
+async function doBackup(){try{if(!window.claude)throw 0;const d=await claude.use('downloads');if(!d)throw 0;await d.save({filename:'seating-backup-'+today+'.json',data:JSON.stringify(S)});msg='تم الحفظ'}catch(e){msg=e&&e.code==='declined'?'لم يُحفظ الملف':'تعذّر الحفظ هنا. جرّب زر نسخ النسخة'}render()}
+function bkV2(){return `<h3>نسخة احتياطية</h3><p class='note'>احفظ نسخة كل أسبوع تقريباً. تشمل الأسماء والخرائط والغياب والإعدادات.</p><div class='acts'><button data-a='bk'>حفظ نسخة احتياطية</button><button data-a='mf'>دمج من ملف</button></div><input type='file' id='mfile' accept='.json,.txt' data-f='mfile' hidden><p class='note'>إذا لم يعمل الحفظ في جهازك:</p><div class='acts'><button data-a='cp'>نسخ النسخة</button><button data-a='mc'>دمج من الحافظة</button></div><p>${esc(msg)}</p>`}
+function drawTop(){const ps=periods();if(!ps.includes(cur.p))cur.p=ps[0];
+$('#top').innerHTML=`<select data-f="c">${Object.keys(S.classes).map(c=>`<option value="${c}"${c===cur.c?' selected':''}>${esc(S.classes[c].name)}</option>`).join('')}</select><input type="date" data-f="d" value="${cur.d}"><select data-f="p">${ps.map(p=>`<option value="${p}"${p===cur.p?' selected':''}>الحصة ${p}</option>`).join('')}</select>`}
+function dayV(){const c=cur.c,C=S.classes[c],k=key();const gn=names(c,'girls'),bn=names(c,'boys'),all=[...gn,...bn];
+if(!all.length)return '<p class="note">لا توجد أسماء بعد. أضف الأسماء من تبويب «الأسماء».</p>';
+if(!S.maps[k]){gen(c,cur.d,cur.p);save()}
+const ab=S.abs[k]||[],mp=S.maps[k],pres=all.filter(n=>!ab.includes(n)).sort().join('\n');
+const ord=C.gl?['b','m','g']:['g','m','b'],nm={g:'البنات',m:'مشترك',b:'الأولاد'};
+const grid=`<div class="board">السبورة</div><div class="room">`+ord.map(sc=>`<div class="col"><h4>${nm[sc]}</h4>`+Array.from({length:C.s[sc]},(_,r)=>{const st=mp.seats.find(x=>x.s===sc&&x.r===r);const cl=sc==='m'?(st?st.x:''):sc;return `<div class="seat ${cl}${st?'':' em'}">`+(st?st.n.map(n=>`<span class="nm${cur.sel===n?' sel':''}" data-a="nm" data-n="${esc(n)}">${esc(n)}</span>`).join(''):'')+`</div>`}).join('')+`</div>`).join('')+`</div>`;
+return `<p><b>${all.length-ab.length}</b> حاضر و<b>${ab.length}</b> غائب</p><div class="acts noprint"><button data-a="re">إعادة الخلط</button><button data-a="pr">طباعة</button></div>`
++(mp.warn?`<div class="warn">${esc(mp.warn)}</div>`:'')+(mp.sig!==pres?'<div class="warn">تغيّرت الأسماء منذ حفظ هذا الترتيب. اضغط «إعادة الخلط» لتحديثه.</div>':'')
++grid+`<p class="note noprint">لتبديل مكان طالبين اضغط اسم الأول ثم اسم الثاني.</p><h3 class="noprint">تسجيل الغياب</h3><div class="chips noprint">`+all.map(n=>`<button class="chip ${gn.includes(n)?'g':'b'}${ab.includes(n)?' x':''}" data-a="ab" data-n="${esc(n)}">${esc(n)}</button>`).join('')+`</div><p class="note noprint">عند تسجيل غائب أو إلغائه يُعاد خلط الحاضرين.</p>`}
+function namV(){const C=S.classes[cur.c];const bx=(f,t)=>`<h3>${t} (${names(cur.c,f).length})</h3><textarea rows="7" data-f="${f}" placeholder="اسم في كل سطر">${esc(C[f])}</textarea><label>أو ملف نصي أو CSV: <input type="file" accept=".txt,.csv,.xlsx,.xls,.docx" data-f="file" data-t="${f}"></label>`;
+return `<p class="note">الصق الأسماء، اسماً في كل سطر. الحفظ تلقائي. بعد التغيير اضغط «إعادة الخلط» في تبويب اليوم.</p><p class="note">${esc(msg)}</p>`+bx('girls','البنات')+bx('boys','الأولاد')}
+function setV(){const C=S.classes[cur.c];const sz=sc=>`<div class="row"><span>${{g:'مقاعد البنات',m:'مقاعد الوسط',b:'مقاعد الأولاد'}[sc]}</span><button data-a="sz" data-v="${sc},-1" aria-label="أقل">−</button><b>${C.s[sc]}</b><button data-a="sz" data-v="${sc},1" aria-label="أكثر">+</button></div>`;
+return `<h3>إعدادات الفصل</h3><label>اسم الفصل <input data-f="name" value="${esc(C.name)}"></label><label>البنات على <select data-f="gl"><option value="1"${C.gl?' selected':''}>يسار المعلم</option><option value="0"${C.gl?'':' selected'}>يمين المعلم</option></select></label>`+sz('g')+sz('m')+sz('b')+`<p class="note">تغيير المقاعد يؤثر على الترتيب الجديد. اضغط «إعادة الخلط» في اليوم المطلوب.</p><h3>جدول الحصص</h3><p class="note">أرقام الحصص مفصولة بفاصلة. إذا تُرك فارغاً تظهر الحصص من 1 إلى 7.</p>`+DK.map((d,i)=>`<label>${d} <input data-f="w${i}" value="${esc(C.sch[i]||'')}" placeholder="مثال: 1,3,4"></label>`).join('')+`${notV(C)}${n3V(C)}`}
+function stV(){const c=cur.c,cnt={};Object.keys(S.abs).forEach(k=>{if(k.split('|')[0]===c)S.abs[k].forEach(n=>cnt[n]=(cnt[n]||0)+1)});
+const rows=[...names(c,'girls'),...names(c,'boys')].map(n=>[n,cnt[n]||0]).sort((x,y)=>y[1]-x[1]);
+return `<h3>حصص الغياب لكل طالب</h3><table><tr><th>الاسم</th><th>عدد الحصص</th></tr>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td>${r[1]}</td></tr>`).join('')}</table>`}
+function bkV(){return `<h3>نسخة احتياطية</h3><p class="note">انسخ هذا النص واحفظه في ملف أو رسالة.</p><textarea id="bk" rows="5" readonly>${esc(JSON.stringify(S))}</textarea><div class="acts"><button data-a="cp">نسخ</button></div><h3>دمج نسخة</h3><p class="note">الصق نسخة هنا أو اختر ملفاً. يبقى ما عندك كما هو، ويُضاف الجديد فقط، ويُجمع الغياب.</p><textarea id="mi" rows="4"></textarea><label><input type="file" accept=".txt,.json" data-f="file" data-t="mi"></label><div class="acts"><button data-a="mg">دمج</button></div><p>${esc(msg)}</p>`}
+function render(){drawTop();const T=[['day','اليوم'],['names','الأسماء'],['set','الإعدادات'],['st','الغياب'],['bk','نسخة احتياطية']];
+$('#nav').innerHTML=T.map(t=>`<button data-a="tab" data-v="${t[0]}"${cur.tab===t[0]?' class="on"':''}>${t[1]}</button>`).join('');
+$('#view').innerHTML=({day:dayV,names:namV,set:setV,st:stV,bk:bkV2})[cur.tab]()}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,C=S.classes[cur.c],k=key();
+if(a==='tab'){cur.tab=t.dataset.v;cur.sel=null;cur.pick=[];msg=''}
+else if(a==='nm'){const n=t.dataset.n;if(!cur.sel)cur.sel=n;else if(cur.sel===n)cur.sel=null;else{swap(k,cur.sel,n);cur.sel=null;save()}}
+else if(a==='ab'){const n=t.dataset.n,l=S.abs[k]||(S.abs[k]=[]),i=l.indexOf(n);i<0?l.push(n):l.splice(i,1);if(!l.length)delete S.abs[k];delete S.maps[k];save()}
+else if(a==='re'){delete S.maps[k]}
+else if(a==='pk'){const p=cur.pick||(cur.pick=[]),n=t.dataset.n,i=p.indexOf(n);i<0?p.push(n):p.splice(i,1)}
+else if(a==='rg'||a==='rs'){const p=cur.pick||[];if(p.length>=2){rulesOf(C).push({t:a==='rs'?'s':'g',n:p.slice()});cur.pick=[];save()}}
+else if(a==='rd'){rulesOf(C).splice(+t.dataset.v,1);save()}
+else if(a==='n3'||a==='n3d'){const L=C.no3||(C.no3=[]),n=t.dataset.n,i=L.indexOf(n);i<0?L.push(n):L.splice(i,1);save()}
+else if(a==='bk'){doBackup();return}
+else if(a==='mf'){$('#mfile').click();return}
+else if(a==='mc'){navigator.clipboard.readText().then(x=>{merge(JSON.parse(x));save();msg='تم الدمج';render()}).catch(()=>{msg='تعذّر الدمج من الحافظة';render()});return}
+else if(a==='pr'){window.print();return}
+else if(a==='sz'){const q=t.dataset.v.split(',');C.s[q[0]]=Math.max(1,Math.min(12,C.s[q[0]]+ +q[1]));save()}
+else if(a==='cp'){try{navigator.clipboard.writeText(JSON.stringify(S));msg='تم النسخ'}catch(_){msg='تعذّر النسخ'}}
+else if(a==='mg'){try{merge(JSON.parse($('#mi').value));save();msg='تم الدمج'}catch(_){msg='النص غير صالح'}}
+render()});
+document.addEventListener('input',e=>{const t=e.target,f=t.dataset.f;if(!f)return;const C=S.classes[cur.c];
+if(f==='c'){cur.c=t.value;cur.sel=null;cur.pick=[];return render()}
+if(f==='d'){cur.d=t.value||cur.d;cur.sel=null;return render()}
+if(f==='p'){cur.p=+t.value;return render()}
+if(f==='mfile'){const fl=t.files[0];if(!fl)return;const rd=new FileReader();rd.onload=()=>{try{merge(JSON.parse(String(rd.result)));save();msg='تم الدمج'}catch(_){msg='الملف غير صالح'}render()};rd.readAsText(fl);t.value='';return}
+if(f==='file'){const fl=t.files[0];if(!fl)return;if(t.dataset.t!=='mi'&&/\.(xlsx|xls|docx)$/i.test(fl.name)){readBin(fl,t.dataset.t);return}const r=new FileReader();r.onload=()=>{const tg=t.dataset.t,x=String(r.result).replace(/^\uFEFF/,'');if(tg==='mi')$('#mi').value=x;else{C[tg]=(C[tg].trim()+'\n'+x.replace(/[,;\t]/g,'\n').trim()).trim();save();render()}};r.readAsText(fl);return}
+if(f==='girls'||f==='boys'||f==='not'||f==='name')C[f]=t.value;
+else if(f==='gl')C.gl=t.value==='1';
+else if(f[0]==='w')C.sch[f[1]]=t.value;
+save();if(f==='name'||f[0]==='w')drawTop()});
+render();
+</script></body></html>
